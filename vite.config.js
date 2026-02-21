@@ -6,9 +6,9 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
-      // /delta-proxy/* → https://api.india.delta.exchange  (production)
+      // /delta-proxy/* → https://cdn.india.deltaex.org  (production CDN)
       '/delta-proxy': {
-        target: 'https://api.india.delta.exchange',
+        target: 'https://cdn.india.deltaex.org',
         changeOrigin: true,
         secure: true,
         headers: {

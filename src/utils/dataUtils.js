@@ -22,19 +22,19 @@ export const METRICS = [
   { value: 'vega',        label: 'Vega'            },
 ];
 
-/** Resolutions supported by Delta Exchange history/candles endpoint */
+/** Resolutions supported by Delta Exchange chart/history endpoint (in minutes) */
 export const RESOLUTIONS = [
-  { value: '1m',  label: '1 Min'  },
-  { value: '3m',  label: '3 Min'  },
-  { value: '5m',  label: '5 Min'  },
-  { value: '15m', label: '15 Min' },
-  { value: '30m', label: '30 Min' },
-  { value: '1h',  label: '1 Hour' },
-  { value: '2h',  label: '2 Hour' },
-  { value: '4h',  label: '4 Hour' },
-  { value: '6h',  label: '6 Hour' },
-  { value: '1d',  label: '1 Day'  },
-  { value: '1w',  label: '1 Week' },
+  { value: 1,     label: '1 Min'  },
+  { value: 3,     label: '3 Min'  },
+  { value: 5,     label: '5 Min'  },
+  { value: 15,    label: '15 Min' },
+  { value: 30,    label: '30 Min' },
+  { value: 60,    label: '1 Hour' },
+  { value: 120,   label: '2 Hour' },
+  { value: 240,   label: '4 Hour' },
+  { value: 360,   label: '6 Hour' },
+  { value: 1440,  label: '1 Day'  },
+  { value: 10080, label: '1 Week' },
 ];
 
 // ─── Symbol Parsing ────────────────────────────────────────────────────────────
@@ -234,15 +234,18 @@ export function buildStrikeSeriesForExpiry(rows, metric) {
 }
 
 /**
- * Build OHLCV arrays for Highcharts from a Delta candle array.
- * Delta candle shape: { time, open, high, low, close, volume }
- * time is in Unix seconds.
+ * Build OHLCV arrays for Highcharts from TradingView chart/history response.
+ * TradingView format: { s: "ok", t: [...], o: [...], h: [...], l: [...], c: [...], v: [...] }
+ * t = timestamps (Unix seconds), o = open, h = high, l = low, c = close, v = volume
  */
-export function buildCandlestickSeries(candles) {
-  if (!candles || !Array.isArray(candles) || candles.length === 0) return null;
+export function buildCandlestickSeries(chartData) {
+  if (!chartData || !chartData.t || !Array.isArray(chartData.t) || chartData.t.length === 0) {
+    return null;
+  }
 
-  const ohlcData = candles.map((c) => [c.time * 1000, c.open, c.high, c.low, c.close]);
-  const volData  = candles.map((c) => [c.time * 1000, c.volume ?? 0]);
+  const { t, o, h, l, c, v } = chartData;
+  const ohlcData = t.map((time, i) => [time * 1000, o[i], h[i], l[i], c[i]]);
+  const volData  = t.map((time, i) => [time * 1000, v?.[i] ?? 0]);
 
   return { ohlcData, volData };
 }
@@ -250,18 +253,63 @@ export function buildCandlestickSeries(candles) {
 // ─── CSV Export ────────────────────────────────────────────────────────────────
 
 /**
- * Convert normalized records to CSV string.
+ * Convert normalized option chain records to CSV string.
+ * Includes every field shown in the frontend table.
  */
 export function recordsToCsv(records) {
   const headers = [
-    'symbol','asset','option_type','strike','expiry_date',
-    'mark_price','bid_price','ask_price','bid_iv','ask_iv',
-    'open_interest','volume','spot_price',
-    'delta','gamma','theta','vega','rho',
+    'symbol', 'product_id', 'asset', 'option_type', 'strike',
+    'expiry_date', 'expiry_raw',
+    'spot_price',
+    'mark_price', 'bid_price', 'ask_price', 'bid_size', 'ask_size',
+    'bid_iv', 'ask_iv',
+    'open_interest', 'volume', 'turnover_usd',
+    'delta', 'gamma', 'theta', 'vega', 'rho',
   ];
   const rows = records.map((r) =>
-    headers.map((h) => (r[h] == null ? '' : r[h])).join(',')
+    headers.map((h) => {
+      const v = r[h];
+      if (v == null) return '';
+      // Wrap strings containing commas/quotes in double-quotes
+      const s = String(v);
+      return s.includes(',') || s.includes('"') || s.includes('\n')
+        ? `"${s.replace(/"/g, '""')}"`
+        : s;
+    }).join(',')
   );
+  return [headers.join(','), ...rows].join('\n');
+}
+
+/**
+ * Convert candlestick data (array of { symbol, option_type, chartData }) to CSV.
+ * chartData is TradingView format: { s, t, o, h, l, c, v } where each field is an array.
+ */
+export function candlestickToCsv(candlestickData) {
+  const headers = [
+    'symbol', 'option_type', 'timestamp_unix', 'datetime_utc',
+    'open', 'high', 'low', 'close', 'volume',
+  ];
+  const rows = [];
+  for (const item of candlestickData) {
+    const cd = item.chartData;
+    if (!cd || !cd.t || !Array.isArray(cd.t)) continue;
+    const { t, o, h, l, c, v } = cd;
+    for (let i = 0; i < t.length; i++) {
+      const time = t[i];
+      const dt = new Date(time * 1000).toISOString();
+      rows.push([
+        item.symbol,
+        item.option_type,
+        time,
+        dt,
+        o?.[i] ?? '',
+        h?.[i] ?? '',
+        l?.[i] ?? '',
+        c?.[i] ?? '',
+        v?.[i] ?? '',
+      ].join(','));
+    }
+  }
   return [headers.join(','), ...rows].join('\n');
 }
 

@@ -78,6 +78,7 @@ export default function useDeltaData() {
     setAssetData(results);
     setErrors(newErrors);
     setLoading(false);
+    return results;          // caller can use this immediately
   }, []);
 
   return { assetData, loading, errors, fetchAll };

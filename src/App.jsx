@@ -5,6 +5,7 @@ import CandlestickChart from './components/CandlestickChart';
 import OptionChainTable from './components/OptionChainTable';
 import useDeltaData     from './hooks/useDeltaData';
 import { PROD_BASE_URL } from './api/deltaClient';
+import { recordsToCsv, candlestickToCsv, downloadCsv } from './utils/dataUtils';
 import './App.css';
 
 const DEFAULT_SETTINGS = {
@@ -13,9 +14,9 @@ const DEFAULT_SETTINGS = {
   metric:           'mark_price',
   minOpenInterest:  0,
   candlestick:      false,
-  resolution:       '1h',
+  resolution:       60,
   lookbackHours:    24,
-  topPerType:       2,
+  topPerType:       5,
 };
 
 const TABS = ['Strike Charts', 'Candlestick', 'Option Chain'];
@@ -28,8 +29,19 @@ export default function App() {
   const { assetData, loading, errors, fetchAll } = useDeltaData();
 
   async function handleFetch() {
-    await fetchAll(settings);
+    const results = await fetchAll(settings);
     if (settings.assets.length > 0) setActiveAsset(settings.assets[0]);
+
+    // Auto-save a CSV for every fetched asset
+    const ts = new Date().toISOString().slice(0, 19).replace(/[:.]/g, '-');
+    for (const [asset, { records, candlestickData }] of results) {
+      if (records.length > 0) {
+        downloadCsv(recordsToCsv(records), `${asset}_option_chain_${ts}.csv`);
+      }
+      if (candlestickData && candlestickData.length > 0) {
+        downloadCsv(candlestickToCsv(candlestickData), `${asset}_candlestick_${ts}.csv`);
+      }
+    }
   }
 
   const assets = [...assetData.keys()];

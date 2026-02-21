@@ -123,10 +123,10 @@ export default function ControlPanel({ settings, onChange, onFetch, loading }) {
               type="number"
               className={styles.input}
               min={1}
-              max={10}
+              max={20}
               step={1}
               value={settings.topPerType}
-              onChange={(e) => set('topPerType', parseInt(e.target.value, 10) || 2)}
+              onChange={(e) => set('topPerType', parseInt(e.target.value, 10) || 5)}
             />
           </label>
         </>

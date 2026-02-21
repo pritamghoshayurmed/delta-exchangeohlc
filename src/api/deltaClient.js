@@ -2,14 +2,14 @@
  * Delta Exchange public API client (v2).
  *
  * All requests are routed through the Vite dev-server proxy so the browser
- * never contacts api.india.delta.exchange directly (avoids CORS blocks):
- *   /delta-proxy/*      → https://api.india.delta.exchange
+ * never contacts cdn.india.deltaex.org directly (avoids CORS blocks):
+ *   /delta-proxy/*      → https://cdn.india.deltaex.org
  *   /delta-test-proxy/* → https://cdn-ind.testnet.deltaex.org
  *
  * Reference: https://docs.delta.exchange/
  */
 
-export const PROD_BASE_URL = 'https://api.india.delta.exchange';
+export const PROD_BASE_URL = 'https://cdn.india.deltaex.org';
 export const TEST_BASE_URL = 'https://cdn-ind.testnet.deltaex.org';
 
 /** Map a real base URL to the Vite proxy prefix. */
@@ -73,6 +73,41 @@ async function _get(baseUrl, path, params = {}) {
     throw new Error(`Delta API error for ${path}: ${JSON.stringify(payload.error ?? payload)}`);
   }
   return payload.result ?? [];
+}
+
+/**
+ * GET helper for TradingView-style chart/history endpoint.
+ * Response format: { success: true, result: { s: "ok", t: [...], o: [...], h: [...], l: [...], c: [...], v: [...] } }
+ * Returns the inner result object with TradingView data.
+ */
+async function _getChartHistory(baseUrl, path, params = {}) {
+  const prefix = proxyPrefix(baseUrl);
+  const url = new URL(`${prefix}${path}`, window.location.origin);
+  Object.entries(params).forEach(([k, v]) => {
+    if (v !== undefined && v !== null && v !== '') url.searchParams.set(k, String(v));
+  });
+
+  const response = await fetch(url.toString(), {
+    headers: {
+      Accept: 'application/json',
+    },
+  });
+  if (!response.ok) {
+    const errorPayload = await parseErrorPayload(response);
+    throw new Error(formatHttpError(response.status, path, errorPayload));
+  }
+
+  const payload = await response.json();
+  if (!payload.success) {
+    throw new Error(`Delta API error for ${path}: ${JSON.stringify(payload.error ?? payload)}`);
+  }
+  
+  const chartData = payload.result;
+  // TradingView format: s = "ok" for success, s = "no_data" or "error" for errors
+  if (chartData.s && chartData.s !== 'ok') {
+    throw new Error(`Chart API error for ${path}: ${chartData.s}`);
+  }
+  return chartData;
 }
 
 /**
@@ -160,17 +195,21 @@ export function createDeltaClient(baseUrl = PROD_BASE_URL) {
 
     /**
      * Fetch OHLC candlestick data for a given symbol and time range.
-     * start / end are Unix timestamps in SECONDS.
-     * GET /v2/history/candles?symbol=C-BTC-95200-200225&resolution=5m&start=...&end=...
+     * from / to are Unix timestamps in SECONDS.
+     * GET /v2/chart/history?symbol=MARK:C-BTC-70000-220226&resolution=60&from=...&to=...&cache_ttl=10m
      *
-     * Supported resolutions: 1m, 3m, 5m, 15m, 30m, 1h, 2h, 4h, 6h, 1d, 1w
+     * Resolution is in minutes (e.g., 1, 5, 15, 30, 60, 120, 240, 360, 1440, 10080)
+     * Returns TradingView format: { s, t, o, h, l, c, v }
      */
-    getOhlcCandles(symbol, resolution, startSec, endSec) {
-      return _get(base, '/v2/history/candles', {
-        symbol,
+    getOhlcCandles(symbol, resolution, fromSec, toSec) {
+      // Symbol must be prefixed with "MARK:" for the chart/history endpoint
+      const markSymbol = symbol.startsWith('MARK:') ? symbol : `MARK:${symbol}`;
+      return _getChartHistory(base, '/v2/chart/history', {
+        symbol: markSymbol,
         resolution,
-        start: String(startSec),
-        end:   String(endSec),
+        from: String(fromSec),
+        to:   String(toSec),
+        cache_ttl: '10m',
       });
     },
   };
