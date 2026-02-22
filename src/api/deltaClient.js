@@ -1,22 +1,13 @@
 /**
  * Delta Exchange public API client (v2).
  *
- * All requests are routed through the Vite dev-server proxy so the browser
- * never contacts cdn.india.deltaex.org directly (avoids CORS blocks):
- *   /delta-proxy/*      → https://cdn.india.deltaex.org
- *   /delta-test-proxy/* → https://cdn-ind.testnet.deltaex.org
+ * Requests are made directly to the Delta Exchange CDN.
  *
  * Reference: https://docs.delta.exchange/
  */
 
 export const PROD_BASE_URL = 'https://cdn.india.deltaex.org';
 export const TEST_BASE_URL = 'https://cdn-ind.testnet.deltaex.org';
-
-/** Map a real base URL to the Vite proxy prefix. */
-function proxyPrefix(baseUrl) {
-  if (baseUrl.startsWith('https://cdn-ind.testnet')) return '/delta-test-proxy';
-  return '/delta-proxy';
-}
 
 async function parseErrorPayload(response) {
   const text = await response.text();
@@ -49,11 +40,10 @@ function formatHttpError(status, path, payload) {
 }
 
 /**
- * Generic GET helper — uses Vite's dev-server proxy to avoid CORS.
+ * Generic GET helper.
  */
 async function _get(baseUrl, path, params = {}) {
-  const prefix = proxyPrefix(baseUrl);
-  const url = new URL(`${prefix}${path}`, window.location.origin);
+  const url = new URL(`${baseUrl}${path}`);
   Object.entries(params).forEach(([k, v]) => {
     if (v !== undefined && v !== null && v !== '') url.searchParams.set(k, String(v));
   });
@@ -81,8 +71,7 @@ async function _get(baseUrl, path, params = {}) {
  * Returns the inner result object with TradingView data.
  */
 async function _getChartHistory(baseUrl, path, params = {}) {
-  const prefix = proxyPrefix(baseUrl);
-  const url = new URL(`${prefix}${path}`, window.location.origin);
+  const url = new URL(`${baseUrl}${path}`);
   Object.entries(params).forEach(([k, v]) => {
     if (v !== undefined && v !== null && v !== '') url.searchParams.set(k, String(v));
   });
@@ -121,8 +110,7 @@ async function _getAll(baseUrl, path, params = {}) {
 
   do {
     const pageParams = { ...params, page_size: PAGE_SIZE, ...(after ? { after } : {}) };
-    const prefix = proxyPrefix(baseUrl);
-    const url = new URL(`${prefix}${path}`, window.location.origin);
+    const url = new URL(`${baseUrl}${path}`);
     Object.entries(pageParams).forEach(([k, v]) => {
       if (v !== undefined && v !== null && v !== '') url.searchParams.set(k, String(v));
     });

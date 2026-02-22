@@ -1,13 +1,3 @@
 {
-  "framework": "vite",
-  "rewrites": [
-    {
-      "source": "/delta-proxy/:path*",
-      "destination": "/api/delta-proxy/:path*"
-    },
-    {
-      "source": "/delta-test-proxy/:path*",
-      "destination": "/api/delta-test-proxy/:path*"
-    }
-  ]
+  "framework": "vite"
 }
