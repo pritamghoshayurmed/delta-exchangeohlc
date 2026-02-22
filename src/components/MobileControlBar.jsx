@@ -3,12 +3,11 @@ import { RESOLUTIONS } from '../utils/dataUtils';
 import styles from './MobileControlBar.module.css';
 
 const LOOKBACK_OPTIONS = [1, 2, 4, 6, 12, 24, 48, 72, 168];
-const TOP_N_OPTIONS    = [3, 5, 10, 15, 20];
 
 /**
  * Compact top control bar shown only on mobile (≤768 px).
- * Layout mirrors the hand-drawn sketch:
- *   Row 1 → resolution | lookback | top-N | FETCH
+ * Layout:
+ *   Row 1 → resolution | lookback | FETCH
  *   Row 2 → [ASSET toggle] [OPT-TYPE toggle] strike-pill  spot-pill
  *   Row 3 → ‹  symbol-name  ›   (n / total, sorted closest-to-spot)
  */
@@ -83,18 +82,6 @@ export default function MobileControlBar({
             </select>
           </label>
 
-          <label className={styles.pillWrap}>
-            <span className={styles.pillHint}>Top</span>
-            <select
-              className={styles.pill}
-              value={settings.topPerType}
-              onChange={(e) => set('topPerType', Number(e.target.value))}
-            >
-              {TOP_N_OPTIONS.map((n) => (
-                <option key={n} value={n}>{n}</option>
-              ))}
-            </select>
-          </label>
         </div>
 
         <button

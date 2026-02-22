@@ -4,7 +4,7 @@ import _HighchartsReact from 'highcharts-react-official';
 const HighchartsReact = _HighchartsReact.default ?? _HighchartsReact;
 import { buildCandlestickSeries } from '../utils/dataUtils';
 
-function buildOptions(asset, symbol, optionType, resolution, chartData) {
+function buildOptions(asset, symbol, optionType, resolution, chartData, height) {
   const parsed = buildCandlestickSeries(chartData);
   const label = optionType === 'call' ? 'CE' : 'PE';
 
@@ -35,7 +35,7 @@ function buildOptions(asset, symbol, optionType, resolution, chartData) {
     chart: {
       backgroundColor: '#131722',
       style: { fontFamily: 'inherit' },
-      height: 420,
+      height: height ?? 420,
     },
     rangeSelector: { enabled: false },
     navigator: { enabled: true, maskFill: 'rgba(38,166,154,0.15)' },
@@ -83,7 +83,6 @@ function buildOptions(asset, symbol, optionType, resolution, chartData) {
       rules: [{
         condition: { maxWidth: 480 },
         chartOptions: {
-          chart: { height: 300 },
           title: { style: { fontSize: '11px' } },
         },
       }],
@@ -94,23 +93,34 @@ function buildOptions(asset, symbol, optionType, resolution, chartData) {
   };
 }
 
-export default function CandlestickChart({ asset, symbol, optionType, resolution, chartData }) {
+export default function CandlestickChart({ asset, symbol, optionType, resolution, chartData, height }) {
   const options = useMemo(
-    () => buildOptions(asset, symbol, optionType, resolution, chartData),
-    [asset, symbol, optionType, resolution, chartData]
+    () => buildOptions(asset, symbol, optionType, resolution, chartData, height),
+    [asset, symbol, optionType, resolution, chartData, height]
   );
 
   const label = optionType === 'call' ? 'CE' : 'PE';
+  const fillParent = height === '100%';
 
   return (
-    <div style={{ marginBottom: 24 }}>
-      <div style={{ fontSize: 11, color: '#9598a1', marginBottom: 4 }}>
+    <div style={fillParent
+      ? { flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }
+      : { marginBottom: 24 }
+    }>
+      <div style={{ fontSize: 11, color: '#9598a1', marginBottom: 4, flexShrink: 0, paddingLeft: 8 }}>
         {asset} {label} — {symbol} — {resolution}
         {(!chartData || chartData.length === 0) && (
           <span style={{ color: '#ef5350', marginLeft: 8 }}>(no candle data)</span>
         )}
       </div>
-      <HighchartsReact highcharts={Highcharts} options={options} constructorType="stockChart" />
+      <div style={fillParent ? { flex: 1, minHeight: 0 } : {}}>
+        <HighchartsReact
+          highcharts={Highcharts}
+          options={options}
+          constructorType="stockChart"
+          containerProps={fillParent ? { style: { height: '100%' } } : {}}
+        />
+      </div>
     </div>
   );
 }

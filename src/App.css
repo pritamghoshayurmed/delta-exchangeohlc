@@ -223,8 +223,10 @@
 /* ── Mobile content ──────────────────────────────────────────────────── */
 .mobile-content {
   flex: 1;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
 .mobile-summary-strip {
@@ -264,7 +266,11 @@
 .mobile-summary-spot { color: #00c4b4; }
 
 .mobile-chart-wrap {
-  padding: 8px 0 4px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .mobile-hint {

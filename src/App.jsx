@@ -5,7 +5,7 @@ import StrikeChart      from './components/StrikeChart';
 import CandlestickChart from './components/CandlestickChart';
 import OptionChainTable from './components/OptionChainTable';
 import useDeltaData     from './hooks/useDeltaData';
-import { PROD_BASE_URL } from './api/deltaClient';
+import { PROD_BASE_URL, createDeltaClient } from './api/deltaClient';
 import { recordsToCsv, downloadCsv } from './utils/dataUtils';
 import './App.css';
 
@@ -33,6 +33,11 @@ export default function App() {
   const [mobileOptType,  setMobileOptType]  = useState('call'); // 'call' | 'put'
   const [mobileSymIdx,   setMobileSymIdx]   = useState(0);
 
+  /* ── Mobile on-demand candle state ── */
+  const [mobileCandleData,    setMobileCandleData]    = useState(null);  // { symbol, option_type, chartData }
+  const [mobileCandleLoading, setMobileCandleLoading] = useState(false);
+  const [mobileFetchVersion,  setMobileFetchVersion]  = useState(0);
+
   const { assetData, loading, errors, fetchAll } = useDeltaData();
 
   /* ── Fetch handler ── */
@@ -41,6 +46,9 @@ export default function App() {
     if (settings.assets.length > 0) setActiveAsset(settings.assets[0]);
     setMobileSymIdx(0);
     setMobileAssetIdx(0);
+    setMobileCandleData(null);
+    // Bump version so the candle effect re-fires even if symbol name didn't change
+    setMobileFetchVersion((v) => v + 1);
     // Always land on Candlestick tab – fall back to Strike Charts if not fetched
     setActiveTab(settings.candlestick ? 'Candlestick' : 'Strike Charts');
   }
@@ -74,14 +82,40 @@ export default function App() {
 
   const mobileSymbol     = mobileSymbols[mobileSymIdx] ?? null;
   const mobileSpot       = mobileData?.records?.find((r) => r.spot_price)?.spot_price ?? null;
-  const mobileCandleItem =
-    mobileData?.candlestickData?.find((cd) => cd.symbol === mobileSymbol?.symbol)
-    ?? mobileData?.candlestickData?.[0]
-    ?? null;
   const mobileStrikeRecords = useMemo(() => {
     if (!mobileData?.records) return [];
     return mobileData.records.filter((r) => r.option_type === mobileOptType);
   }, [mobileData, mobileOptType]);
+
+  /* ── On-demand candle fetch whenever the mobile symbol changes ── */
+  useEffect(() => {
+    if (!mobileSymbol || !settings.candlestick || !mobileData) {
+      setMobileCandleData(null);
+      return;
+    }
+    let cancelled = false;
+    setMobileCandleLoading(true);
+    setMobileCandleData(null);
+
+    const client  = createDeltaClient(settings.baseUrl);
+    const nowSec  = Math.floor(Date.now() / 1000);
+    const startSec = nowSec - settings.lookbackHours * 3600;
+
+    client
+      .getOhlcCandles(mobileSymbol.symbol, settings.resolution, startSec, nowSec)
+      .then((chartData) => {
+        if (!cancelled)
+          setMobileCandleData({ symbol: mobileSymbol.symbol, option_type: mobileSymbol.option_type, chartData });
+      })
+      .catch(() => {
+        if (!cancelled)
+          setMobileCandleData({ symbol: mobileSymbol.symbol, option_type: mobileSymbol.option_type, chartData: null });
+      })
+      .finally(() => { if (!cancelled) setMobileCandleLoading(false); });
+
+    return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mobileSymbol?.symbol, settings.resolution, settings.lookbackHours, settings.baseUrl, settings.candlestick, mobileFetchVersion]);
 
   /* ── Mobile handlers ── */
   function toggleMobileAsset() {
@@ -303,15 +337,25 @@ export default function App() {
               </div>
 
               {/* Candlestick — primary view */}
-              {mobileCandleItem ? (
+              {mobileSymbol && settings.candlestick ? (
                 <div className="mobile-chart-wrap">
-                  <CandlestickChart
-                    asset={mobileAsset}
-                    symbol={mobileCandleItem.symbol}
-                    optionType={mobileCandleItem.option_type}
-                    resolution={settings.resolution}
-                    chartData={mobileCandleItem.chartData}
-                  />
+                  {mobileCandleLoading ? (
+                    <div className="mobile-loading" style={{ flex: 1 }}>
+                      <div className="mobile-loading-spinner" />
+                      <span>Loading chart…</span>
+                    </div>
+                  ) : mobileCandleData ? (
+                    <CandlestickChart
+                      asset={mobileAsset}
+                      symbol={mobileCandleData.symbol}
+                      optionType={mobileCandleData.option_type}
+                      resolution={settings.resolution}
+                      chartData={mobileCandleData.chartData}
+                      height="100%"
+                    />
+                  ) : (
+                    <div className="mobile-no-data">No candle data for this symbol.</div>
+                  )}
                 </div>
               ) : (
                 <div className="mobile-chart-wrap">
