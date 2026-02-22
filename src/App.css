@@ -271,6 +271,17 @@
   flex-direction: column;
   min-height: 0;
   overflow: hidden;
+  /* give Highcharts a concrete pixel height from the flex layout */
+  height: 0;   /* flex:1 + height:0 forces the browser to compute a real px height */
+
+  /* make the inner Highcharts div fill this container */
+  & > div {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+  }
 }
 
 .mobile-hint {
@@ -323,8 +334,12 @@
   }
 
   .main-content {
-    height: 100%;
+    flex: 1;
+    height: 0;          /* force flex children to compute real heights */
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
   }
 
   /* Show / hide */
