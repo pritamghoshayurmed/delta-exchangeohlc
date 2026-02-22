@@ -1,0 +1,294 @@
+/* ─── MobileControlBar — only rendered on ≤768 px screens ──────────── */
+
+/* Hidden on desktop; made visible by the media-query below */
+.bar {
+  display: none;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px 12px 12px;
+  background: #1a1d27;
+  border-bottom: 2px solid #2a2e39;
+  flex-shrink: 0;
+}
+
+/* ── Shared row ──────────────────────────────────────────────────────── */
+.row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* ── Row 1 controls ──────────────────────────────────────────────────── */
+.pillGroup {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  flex-wrap: wrap;
+}
+
+.pillWrap {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+}
+
+.pillHint {
+  font-size: 9px;
+  color: #5a5e6b;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding-left: 2px;
+}
+
+.pill {
+  background: #131722;
+  border: 1px solid #2a2e39;
+  border-radius: 20px;
+  color: #d1d4dc;
+  padding: 5px 10px;
+  font-size: 11px;
+  cursor: pointer;
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+  min-width: 54px;
+}
+
+.pill:focus {
+  border-color: #4c9be8;
+}
+
+.iconBtn {
+  background: #131722;
+  border: 1px solid #2a2e39;
+  border-radius: 50%;
+  color: #9598a1;
+  width: 30px;
+  height: 30px;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.iconBtn:hover     { background: #2a2e39; color: #d1d4dc; }
+.iconBtnActive     { background: #2a2e39; border-color: #4c9be8; color: #4c9be8; }
+
+.fetchBtn {
+  background: #2962ff;
+  color: #ffffff;
+  border: none;
+  border-radius: 20px;
+  padding: 7px 18px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  letter-spacing: 0.02em;
+  transition: background 0.15s, opacity 0.15s;
+}
+
+.fetchBtn:hover:not(:disabled) { background: #1a4fd6; }
+.fetchBtn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* ── Expanded settings panel ─────────────────────────────────────────── */
+.expandedSettings {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: #131722;
+  border: 1px solid #2a2e39;
+  border-radius: 8px;
+  padding: 10px 12px;
+  animation: slideDown 0.15s ease-out;
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
+
+.settingsRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  color: #9598a1;
+}
+
+.checkRow {
+  gap: 8px;
+  cursor: pointer;
+}
+
+.settingsLabel {
+  min-width: 60px;
+  color: #9598a1;
+  font-size: 11px;
+}
+
+.settingsSelect,
+.settingsInput {
+  flex: 1;
+  background: #1a1d27;
+  border: 1px solid #2a2e39;
+  border-radius: 6px;
+  color: #d1d4dc;
+  padding: 5px 8px;
+  font-size: 12px;
+  outline: none;
+}
+
+.settingsSelect:focus,
+.settingsInput:focus { border-color: #4c9be8; }
+
+/* ── Row 2: toggle buttons ───────────────────────────────────────────── */
+.assetToggle {
+  background: #131722;
+  border: 2px solid #4c9be8;
+  border-radius: 10px;
+  color: #4c9be8;
+  padding: 6px 14px;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 64px;
+  justify-content: center;
+  transition: background 0.15s, color 0.15s;
+  letter-spacing: 0.03em;
+}
+
+.assetToggle:active { background: #4c9be8; color: #fff; }
+
+.typeToggle {
+  border: 2px solid;
+  border-radius: 10px;
+  padding: 6px 14px;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 60px;
+  justify-content: center;
+  transition: background 0.15s, color 0.15s;
+  letter-spacing: 0.03em;
+  background: #131722;
+}
+
+.callToggle { border-color: #26a69a; color: #26a69a; }
+.callToggle:active { background: #26a69a; color: #fff; }
+
+.putToggle  { border-color: #ef5350; color: #ef5350; }
+.putToggle:active  { background: #ef5350; color: #fff; }
+
+.toggleArrow {
+  font-size: 10px;
+  opacity: 0.7;
+}
+
+.priceInfo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+}
+
+.strikePill {
+  background: #2a2e39;
+  color: #d1d4dc;
+  border-radius: 14px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.spotPill {
+  background: #0e2e2e;
+  color: #00c4b4;
+  border-radius: 14px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* ── Row 3: Symbol navigator ────────────────────────────────────────── */
+.symRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.navBtn {
+  background: #2a2e39;
+  border: 1px solid #3a3e4d;
+  border-radius: 50%;
+  color: #d1d4dc;
+  width: 34px;
+  height: 34px;
+  font-size: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  line-height: 1;
+  transition: background 0.12s;
+}
+
+.navBtn:hover:not(:disabled) { background: #3a4060; }
+.navBtn:disabled { opacity: 0.25; cursor: not-allowed; }
+
+.symCenter {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  flex: 1;
+  min-width: 0;
+}
+
+.symName {
+  font-size: 13px;
+  font-weight: 700;
+  color: #d1d4dc;
+  background: #131722;
+  border: 1px solid #2a2e39;
+  border-radius: 8px;
+  padding: 7px 14px;
+  width: 100%;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: 'Courier New', monospace;
+  letter-spacing: 0.03em;
+}
+
+.symMeta {
+  font-size: 10px;
+  color: #5a5e6b;
+  text-align: center;
+}
+
+/* ─── Reveal on mobile ───────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .bar {
+    display: flex;
+  }
+}

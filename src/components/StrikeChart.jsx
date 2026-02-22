@@ -66,6 +66,16 @@ function buildOptions(asset, rows, metric, expiryDate) {
     },
     credits: { enabled: false },
     accessibility: { enabled: false },
+    responsive: {
+      rules: [{
+        condition: { maxWidth: 480 },
+        chartOptions: {
+          chart: { height: 260 },
+          title: { style: { fontSize: '11px' } },
+          legend: { itemStyle: { fontSize: '10px' } },
+        },
+      }],
+    },
     series,
   };
 }

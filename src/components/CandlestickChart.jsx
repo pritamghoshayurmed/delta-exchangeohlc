@@ -79,6 +79,15 @@ function buildOptions(asset, symbol, optionType, resolution, chartData) {
     legend: { enabled: false },
     credits: { enabled: false },
     accessibility: { enabled: false },
+    responsive: {
+      rules: [{
+        condition: { maxWidth: 480 },
+        chartOptions: {
+          chart: { height: 300 },
+          title: { style: { fontSize: '11px' } },
+        },
+      }],
+    },
     series: series.length
       ? series
       : [{ type: 'candlestick', name: 'No data', data: [] }],

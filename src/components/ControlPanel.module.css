@@ -129,3 +129,10 @@
 .link:hover {
   text-decoration: underline;
 }
+
+/* ── Hide sidebar on mobile ──────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .panel {
+    display: none;
+  }
+}
