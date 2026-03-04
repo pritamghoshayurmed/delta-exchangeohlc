@@ -238,7 +238,7 @@ export function buildStrikeSeriesForExpiry(rows, metric) {
  * TradingView format: { s: "ok", t: [...], o: [...], h: [...], l: [...], c: [...], v: [...] }
  * t = timestamps (Unix seconds), o = open, h = high, l = low, c = close, v = volume
  */
-export function buildCandlestickSeries(chartData) {
+export function buildCandlestickSeries(chartData, resolutionMinutes = 30) {
   if (!chartData || !chartData.t || !Array.isArray(chartData.t) || chartData.t.length === 0) {
     return null;
   }
@@ -246,6 +246,38 @@ export function buildCandlestickSeries(chartData) {
   const { t, o, h, l, c, v } = chartData;
   const ohlcData = t.map((time, i) => [time * 1000, o[i], h[i], l[i], c[i]]);
   const volData  = t.map((time, i) => [time * 1000, v?.[i] ?? 0]);
+
+  // Pad with null candles so the chart never looks stretched when there are
+  // very few data points. Target a minimum visible window of 40 candles.
+  // Half the padding goes before the first candle, half after the last.
+  const MIN_CANDLES = 40;
+  const actual = ohlcData.length;
+  if (actual < MIN_CANDLES) {
+    const intervalMs = resolutionMinutes * 60 * 1000;
+    const padTotal = MIN_CANDLES - actual;
+    const padBefore = Math.floor(padTotal / 2);
+    const padAfter  = padTotal - padBefore;
+
+    // Prepend nulls before the first candle
+    const firstTs = ohlcData[0][0];
+    const prependOhlc = [];
+    const prependVol  = [];
+    for (let i = padBefore; i >= 1; i--) {
+      const ts = firstTs - i * intervalMs;
+      prependOhlc.push([ts, null, null, null, null]);
+      prependVol.push([ts, null]);
+    }
+    ohlcData.unshift(...prependOhlc);
+    volData.unshift(...prependVol);
+
+    // Append nulls after the last candle
+    const lastTs = ohlcData[ohlcData.length - 1][0];
+    for (let i = 1; i <= padAfter; i++) {
+      const ts = lastTs + i * intervalMs;
+      ohlcData.push([ts, null, null, null, null]);
+      volData.push([ts, null]);
+    }
+  }
 
   return { ohlcData, volData };
 }
