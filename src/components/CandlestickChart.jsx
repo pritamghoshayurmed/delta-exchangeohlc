@@ -5,7 +5,7 @@ const HighchartsReact = _HighchartsReact.default ?? _HighchartsReact;
 import { buildCandlestickSeries } from '../utils/dataUtils';
 
 function buildOptions(asset, symbol, optionType, resolution, chartData, isMobile) {
-  const parsed = buildCandlestickSeries(chartData, resolution);
+  const parsed = buildCandlestickSeries(chartData);
   const label = optionType === 'call' ? 'CE' : 'PE';
 
   const series = [];
